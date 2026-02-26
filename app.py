@@ -106,34 +106,40 @@ def dashboard():
             if data.empty:
                 return "Invalid stock symbol or no data available"
 
-            data['MA20'] = data['Close'].rolling(window=20).mean()
-            data = data.dropna()
+# Handle multi-index columns (important for production)
+            if isinstance(data.columns, pd.MultiIndex):
+                data.columns = data.columns.get_level_values(0)
 
-            current_price = float(data['Close'].values[-1])
-            predicted_price = current_price * 1.02
+                data['MA20'] = data['Close'].rolling(window=20).mean()
+                data = data.dropna()
 
-            trend = "Bullish 📈" if predicted_price > current_price else "Bearish 📉"
+# Force scalar extraction safely
+                current_price = float(data['Close'].iloc[-1])
 
-            # Save prediction
-            new_prediction = Prediction(
-                user_id=session['user_id'],
-                stock_symbol=symbol,
-                model_used=model,
-                predicted_value=predicted_price
-            )
-            db.session.add(new_prediction)
-            db.session.commit()
+                predicted_price = round(current_price * 1.02, 2)
 
-            return render_template(
-                'result.html',
-                symbol=symbol,
-                current=round(current_price, 2),
-                predicted=round(predicted_price, 2),
-                trend=trend,
-                dates=data.index.strftime('%Y-%m-%d').tolist(),
-                closes=data['Close'].round(2).values.tolist(),
-                ma20=data['MA20'].round(2).values.tolist()
-            )
+                trend = "Bullish 📈" if predicted_price > current_price else "Bearish 📉"
+
+# Save prediction
+                new_prediction = Prediction(
+                    user_id=session['user_id'],
+                    stock_symbol=symbol,
+                    model_used=model,
+                    predicted_value=predicted_price
+                )
+                db.session.add(new_prediction)
+                db.session.commit()
+
+                return render_template(
+                    'result.html',
+                    symbol=symbol,
+                    current=round(current_price, 2),
+                    predicted=predicted_price,
+                    trend=trend,
+                    dates=data.index.strftime('%Y-%m-%d').tolist(),
+                    closes=data['Close'].round(2).tolist(),
+                    ma20=data['MA20'].round(2).tolist()
+                )
 
         except Exception as e:
             print("Prediction Error:", e)
