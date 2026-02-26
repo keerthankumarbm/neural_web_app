@@ -1,0 +1,8 @@
+flask
+gunicorn
+flask_sqlalchemy
+psycopg2-binary
+werkzeug
+pandas
+numpy
+yfinance
