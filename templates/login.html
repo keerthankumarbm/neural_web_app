@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 {% block content %}
-
+<div class="auth-wrapper">
+    <div class="auth-card">
+        <!-- existing form here -->
 <div class="card">
     <h2>Login</h2>
     <form method="POST">
@@ -9,6 +11,8 @@
         <button type="submit">Login</button>
     </form>
     <p>Don't have account? <a href="/register">Register</a></p>
+</div>
+</div>
 </div>
 
 {% endblock %}

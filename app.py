@@ -11,9 +11,16 @@ app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
 # PostgreSQL config (Railway provides DATABASE_URL)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+database_url = os.getenv("DATABASE_URL")
 
+if database_url:
+    if database_url.startswith("postgres://"):
+        database_url = database_url.replace("postgres://", "postgresql://", 1)
+    app.config["SQLALCHEMY_DATABASE_URI"] = database_url
+else:
+    app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///local.db"
+
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # ------------------ DATABASE MODELS ------------------
@@ -106,8 +113,8 @@ def dashboard():
             predicted=round(predicted_price, 2),
             trend=trend,
             dates=data.index.strftime('%Y-%m-%d').tolist(),
-            closes=data['Close'].round(2).tolist(),
-            ma20=data['MA20'].round(2).tolist()
+            closes=data['Close'].squeeze().round(2).tolist(),
+            ma20=data['MA20'].squeeze().round(2).tolist()
         )
     return render_template('dashboard.html')
 

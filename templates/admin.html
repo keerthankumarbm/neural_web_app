@@ -4,9 +4,12 @@
 <h2>Admin Dashboard</h2>
 
 <div class="stats-box">
+    <div class="mini-bar">
+    <div class="mini-fill" style="width: {{ (avg_rating or 0) * 20 }}%;"></div>
+</div>
     <div class="stat">
         <h3>Total Users</h3>
-        <p>{{ total_users }}</p>
+        <p style="font-size: 28px; font-weight: bold;">{{ total_users }}</p>
     </div>
 
     <div class="stat">

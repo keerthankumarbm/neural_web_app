@@ -1,34 +1,60 @@
 {% extends "base.html" %}
 {% block content %}
 
-<div class="card">
-    <h2>Prediction Result for {{ symbol }}</h2>
+<div class="container">
 
-    <p><strong>Current Price:</strong> {{ current }}</p>
-    <p><strong>Predicted Price:</strong> {{ predicted }}</p>
+    <!-- Prediction Result Card -->
+    <div class="card dashboard-glow">
+        <h2 style="font-size:28px; margin-bottom:15px;">
+            📊 Prediction Result for {{ symbol }}
+        </h2>
 
-    {% if trend and "Bullish" in trend %}
-        <p class="trend-up">{{ trend }}</p>
-    {% else %}
-        <p class="trend-down">{{ trend }}</p>
-    {% endif %}
+        <p style="font-size:18px; margin-bottom:8px;">
+            <strong>Current Price:</strong> ₹ {{ current }}
+        </p>
+
+        <p style="font-size:18px; margin-bottom:10px;">
+            <strong>Predicted Price:</strong> ₹ {{ predicted }}
+        </p>
+
+        {% if "Bullish" in trend %}
+            <p class="trend-up" style="font-size:20px;">
+                📈 {{ trend }}
+            </p>
+        {% else %}
+            <p class="trend-down" style="font-size:20px;">
+                📉 {{ trend }}
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Chart Section -->
+    <div class="card">
+        <h3 style="margin-bottom:20px;">
+            📈 Stock Chart (Close vs MA20)
+        </h3>
+
+        <div class="chart-container">
+            <canvas id="stockChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Back Button -->
+    <div style="margin-top:20px;">
+        <a href="/dashboard">
+            <button>⬅ Back to Dashboard</button>
+        </a>
+    </div>
+
 </div>
 
-<div class="card">
-    <h3>Stock Chart (Close vs MA20)</h3>
-    <canvas id="stockChart"></canvas>
-</div>
-
-<div style="margin-top:20px;">
-    <a href="/dashboard"><button>Back</button></a>
-</div>
-
+<!-- Chart.js CDN -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <script>
-    const dates = {{ dates | tojson | safe } };
-    const closes = {{ closes | tojson | safe }};
-    const ma20 = {{ ma20 | tojson | safe }};
+    const dates = JSON.parse('{{ dates | tojson | safe }}');
+    const closes = JSON.parse('{{ closes | tojson | safe }}');
+    const ma20 = JSON.parse('{{ ma20 | tojson | safe }}');
 
     const ctx = document.getElementById('stockChart').getContext('2d');
 
@@ -40,14 +66,20 @@
                 {
                     label: 'Close Price',
                     data: closes,
-                    borderWidth: 2,
-                    tension: 0.3
+                    borderColor: '#00f2ff',
+                    backgroundColor: 'rgba(0,242,255,0.1)',
+                    tension: 0.3,
+                    borderWidth: 3,
+                    pointRadius: 2
                 },
                 {
                     label: 'MA20',
                     data: ma20,
-                    borderWidth: 2,
-                    tension: 0.3
+                    borderColor: '#ff00ff',
+                    backgroundColor: 'rgba(255,0,255,0.1)',
+                    tension: 0.3,
+                    borderWidth: 3,
+                    pointRadius: 2
                 }
             ]
         },
@@ -55,15 +87,24 @@
             responsive: true,
             plugins: {
                 legend: {
-                    display: true
+                    labels: {
+                        color: "#000",
+                        font: {
+                            size: 14
+                        }
+                    }
                 }
             },
             scales: {
                 x: {
-                    display: true
+                    ticks: {
+                        color: "#000"
+                    }
                 },
                 y: {
-                    display: true
+                    ticks: {
+                        color: "#000"
+                    }
                 }
             }
         }
