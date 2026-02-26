@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="card">
+    <h2>Give Feedback</h2>
+    <form method="POST">
+        <label>Rating (1-5)</label>
+        <select name="rating">
+            <option>1</option>
+            <option>2</option>
+            <option>3</option>
+            <option>4</option>
+            <option>5</option>
+        </select>
+
+        <textarea name="message" placeholder="Write your feedback"></textarea>
+        <button type="submit">Submit</button>
+    </form>
+</div>
+
+{% endblock %}

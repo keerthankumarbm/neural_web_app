@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Neural Coders - Stock Prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="navbar">
+    <div><strong>Neural Coders</strong></div> 
+    <button onclick="toggleTheme()">🌙</button>
+    <div>
+        {% if session.username %}
+            <a href="/dashboard">Dashboard</a>
+            <a href="/feedback">Feedback</a>
+            <a href="/admin">Admin</a>
+            <a href="/logout">Logout</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="container">
+    {% block content %}{% endblock %}
+</div>
+<script>
+function toggleTheme() {
+    document.body.classList.toggle("dark-mode");
+}
+</script>
+
+</body>
+</html>

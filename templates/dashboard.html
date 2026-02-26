@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Welcome, {{ session.username }}</h2>
+
+<div class="card">
+    <h3>Stock Prediction</h3>
+    <form method="POST">
+        <input type="text" name="symbol" placeholder="Enter Stock Symbol (AAPL)" required>
+        <button type="submit" onclick="showLoader()">Predict</button>
+        <div id="loader" style="display:none;">Loading prediction...</div>
+        <select name="model">
+            <option>LSTM</option>
+            <option>GRU</option>
+            <option>ARIMA</option>
+        </select>
+
+        <button type="submit">Predict</button>
+    </form>
+</div>
+<script>
+function showLoader() {
+    document.getElementById("loader").style.display = "block";
+}
+</script>
+{% endblock %}
