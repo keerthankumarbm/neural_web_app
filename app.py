@@ -1,16 +1,16 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
 import yfinance as yf
 import pandas as pd
-import numpy as np
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
 
-# PostgreSQL config (Railway provides DATABASE_URL)
+# ---------------- DATABASE CONFIG ----------------
+
 database_url = os.getenv("DATABASE_URL")
 
 if database_url:
@@ -23,7 +23,11 @@ else:
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
-# ------------------ DATABASE MODELS ------------------
+# Create tables in production also
+with app.app_context():
+    db.create_all()
+
+# ---------------- MODELS ----------------
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -48,7 +52,7 @@ class Feedback(db.Model):
     message = db.Column(db.Text)
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
-# ------------------ ROUTES ------------------
+# ---------------- ROUTES ----------------
 
 @app.route('/')
 def home():
@@ -96,26 +100,45 @@ def dashboard():
         symbol = request.form['symbol']
         model = request.form['model']
 
-        data = yf.download(symbol, period="6mo")
+        try:
+            data = yf.download(symbol, period="6mo")
 
-        data['MA20'] = data['Close'].rolling(window=20).mean()
-        data = data.dropna()   # VERY IMPORTANT
+            if data.empty:
+                return "Invalid stock symbol or no data available"
 
-        current_price = float(data['Close'].iloc[-1])
-        predicted_price = current_price * 1.02
+            data['MA20'] = data['Close'].rolling(window=20).mean()
+            data = data.dropna()
 
-        trend = "Bullish 📈" if predicted_price > current_price else "Bearish 📉"
+            current_price = float(data['Close'].values[-1])
+            predicted_price = current_price * 1.02
 
-        return render_template(
-            'result.html',
-            symbol=symbol,
-            current=round(current_price, 2),
-            predicted=round(predicted_price, 2),
-            trend=trend,
-            dates=data.index.strftime('%Y-%m-%d').tolist(),
-            closes=data['Close'].squeeze().round(2).tolist(),
-            ma20=data['MA20'].squeeze().round(2).tolist()
-        )
+            trend = "Bullish 📈" if predicted_price > current_price else "Bearish 📉"
+
+            # Save prediction
+            new_prediction = Prediction(
+                user_id=session['user_id'],
+                stock_symbol=symbol,
+                model_used=model,
+                predicted_value=predicted_price
+            )
+            db.session.add(new_prediction)
+            db.session.commit()
+
+            return render_template(
+                'result.html',
+                symbol=symbol,
+                current=round(current_price, 2),
+                predicted=round(predicted_price, 2),
+                trend=trend,
+                dates=data.index.strftime('%Y-%m-%d').tolist(),
+                closes=data['Close'].round(2).values.tolist(),
+                ma20=data['MA20'].round(2).values.tolist()
+            )
+
+        except Exception as e:
+            print("Prediction Error:", e)
+            return "Prediction Failed. Check logs."
+
     return render_template('dashboard.html')
 
 # FEEDBACK
@@ -127,7 +150,7 @@ def feedback():
     if request.method == 'POST':
         fb = Feedback(
             user_id=session['user_id'],
-            rating=request.form['rating'],
+            rating=int(request.form['rating']),
             message=request.form['message']
         )
         db.session.add(fb)
@@ -136,7 +159,7 @@ def feedback():
 
     return render_template('feedback.html')
 
-# ADMIN DASHBOARD
+# ADMIN
 @app.route('/admin')
 def admin():
     feedbacks = Feedback.query.all()
@@ -144,7 +167,7 @@ def admin():
     total_users = User.query.count()
 
     avg_rating = db.session.query(db.func.avg(Feedback.rating)).scalar()
-    avg_rating = round(avg_rating, 2) if avg_rating else "No Ratings"
+    avg_rating = round(avg_rating, 2) if avg_rating else 0
 
     most_used_model = db.session.query(
         Prediction.model_used,
@@ -164,7 +187,7 @@ def admin():
         most_used_model=most_used_model
     )
 
-# ------------------ RUN ------------------
+# ---------------- RUN ----------------
 
 if __name__ == '__main__':
-    app.run()
+    app.run(debug=True)
